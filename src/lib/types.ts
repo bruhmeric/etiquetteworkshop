@@ -98,5 +98,11 @@ export interface TelegramStatusResponse {
   /** True when this deployment runs on localhost (Telegram can't reach it). */
   isLocal: boolean;
   secretConfigured: boolean;
+  /**
+   * When the registered webhook URL replies with an HTTP redirect (e.g. a
+   * non-www domain 308-forwarding to the www one), this is the final URL it
+   * redirects to — Telegram never follows redirects, so deliveries fail.
+   */
+  webhookRedirect?: string | null;
   error?: string;
 }

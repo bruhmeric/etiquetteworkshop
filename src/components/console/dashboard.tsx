@@ -122,11 +122,16 @@ export function Dashboard({
       const json = (await res.json()) as {
         success?: boolean;
         error?: string;
+        warning?: string;
         status?: TelegramStatusResponse;
       };
       if (json.status) setTg(json.status);
       if (!res.ok || !json.success) {
-        toast.error(json.error || 'Telegram action failed.');
+        toast.error(json.error || 'Telegram action failed.', { duration: 10000 });
+        return;
+      }
+      if (json.warning) {
+        toast.warning(json.warning, { duration: 14000 });
         return;
       }
       toast.success(
@@ -516,13 +521,24 @@ function TelegramCard({
 
   const connected = Boolean(tg.webhook && tg.webhook.url === tg.expectedUrl);
   const pointingElsewhere = Boolean(tg.webhook && tg.webhook.url !== tg.expectedUrl);
+  // The registered webhook address replies with a redirect (e.g. custom
+  // domain non-www → www) — Telegram never follows redirects, so every
+  // Approve / Reject press fails with "308 Permanent Redirect".
+  const redirectProblem = Boolean(
+    tg.webhookRedirect ||
+      (tg.webhook?.last_error_message && /308|redirect/i.test(tg.webhook.last_error_message))
+  );
   const manualCmd = `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=${tg.expectedUrl}`;
 
   return (
     <section
       aria-label="Telegram approve buttons"
       className={`overflow-hidden rounded-xl border bg-card ${
-        connected ? 'border-success/40' : 'border-warning/50'
+        connected && !redirectProblem
+          ? 'border-success/40'
+          : redirectProblem
+            ? 'border-destructive/50'
+            : 'border-warning/50'
       }`}
     >
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
@@ -532,10 +548,15 @@ function TelegramCard({
             <h3 className="text-sm font-semibold text-foreground">
               Telegram approve buttons
             </h3>
-            {connected ? (
+            {connected && !redirectProblem ? (
               <Badge variant="outline" className="rounded-full border-success/50 bg-success/10 text-[10px] font-medium uppercase tracking-[0.14em] text-success">
                 <Link2 className="mr-1 h-3 w-3" aria-hidden="true" />
                 Connected
+              </Badge>
+            ) : redirectProblem ? (
+              <Badge variant="outline" className="rounded-full border-destructive/50 bg-destructive/10 text-[10px] font-medium uppercase tracking-[0.14em] text-destructive">
+                <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+                Broken — address redirects
               </Badge>
             ) : pointingElsewhere ? (
               <Badge variant="outline" className="rounded-full border-warning/50 bg-warning/10 text-[10px] font-medium uppercase tracking-[0.14em] text-warning">
@@ -580,6 +601,34 @@ function TelegramCard({
             <p className="mt-1.5 text-[11px] leading-relaxed text-destructive">
               Last delivery error: {tg.webhook.last_error_message}
             </p>
+          ) : null}
+          {redirectProblem ? (
+            <div className="mt-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5">
+              <p className="text-[11px] font-semibold text-destructive">
+                The webhook address replies with a redirect — Telegram never
+                follows redirects, so button presses cannot be delivered.
+              </p>
+              {tg.webhookRedirect ? (
+                <p className="mt-1 break-all text-[11px] leading-relaxed text-muted-foreground">
+                  Registered <span className="font-mono">{tg.webhook?.url}</span>
+                  {tg.webhookRedirect !== tg.webhook?.url ? (
+                    <>
+                      {' '}
+                      forwards to <span className="font-mono">{tg.webhookRedirect}</span>
+                    </>
+                  ) : null}
+                  .
+                </p>
+              ) : null}
+              <p className="mt-1 text-[11px] leading-relaxed text-foreground">
+                This usually happens with a custom domain where one address
+                forwards to the other (for example the non-www address
+                forwarding to the www one). Fix: open this console on the final
+                address your browser lands on (or set{' '}
+                <span className="font-mono">NEXT_PUBLIC_SITE_URL</span> to it
+                on Vercel), then press Connect again.
+              </p>
+            </div>
           ) : null}
           {tg.error ? (
             <p className="mt-1.5 text-[11px] leading-relaxed text-destructive">{tg.error}</p>

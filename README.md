@@ -139,7 +139,7 @@ should stay empty.
 | `NEXT_PUBLIC_ACCOUNT_NUMBER` | – | Account number (with copy button) |
 | `ADMIN_KEY` | ✅ | Password that unlocks the Organizer console (footer link). If unset, the default is **`etiquette2027`** — always set your own on Vercel |
 | `TELEGRAM_WEBHOOK_SECRET` | – | If set, webhook verifies the `X-Telegram-Bot-Api-Secret-Token` header |
-| `NEXT_PUBLIC_SITE_URL` | – | Canonical site URL (bookkeeping) |
+| `NEXT_PUBLIC_SITE_URL` | – | Final public address of the site (the one that does **not** redirect) — used by the Telegram webhook connector, e.g. `https://www.etiquetteworkshop.online` |
 
 ## 3. Configure your event
 
@@ -202,6 +202,7 @@ password is correct. Wait a few minutes and reload the page to try again.
 | Vercel build fails on `cp: .next/standalone…` | Build Command must be `next build` (section 2.4) — the guarded script normally handles this automatically |
 | Telegram alert missing | Check `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`; group ids start with `-100`; the bot must be in the group |
 | Approve button in Telegram does nothing | The webhook isn't bound. Open the **Organizer console** → *Dashboard* → the "Telegram approve buttons" card → **Connect buttons**. (Alerts arrive without the webhook, but buttons need it — see section 2.2.) Check `getWebhookInfo` for `last_error_message` if it was connected but fails |
+| Last delivery error: **308 Permanent Redirect** | The webhook is registered on an address that redirects — most often the **non-www** domain while Vercel treats **www** as primary (or a trailing slash / `http://`). Telegram never follows redirects; it needs a direct `200 OK`. Fix: open the console on the final address (the one the browser lands on, e.g. `https://www.yourdomain.com`) and press **Connect buttons** again. To make it permanent, set `NEXT_PUBLIC_SITE_URL` to that final address in Vercel. The console card now detects and explains this automatically |
 | Ticket email not arriving | `RESEND_API_KEY` set? Domain verified in Resend? Check the recipient's spam; `onboarding@resend.dev` only reaches the account owner |
 | Slip images not loading in Telegram | The `slips` bucket must be **Public** |
 | PDF slip won't upload | PDFs are capped at **3 MB** (images up to 20 MB — they get compressed). Re-export or screenshot the slip if it's bigger |

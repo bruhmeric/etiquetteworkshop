@@ -1,0 +1,68 @@
+🚀 Initializing Z-AI SDK...
+🔎 Searching images: "professional business etiquette workshop seminar, people in business attire, elegant conference room"
+✅ Got 8 images
+{
+  "success": true,
+  "query": "professional business etiquette workshop seminar, people in business attire, elegant conference room",
+  "count": 8,
+  "ranked": false,
+  "captioned_count": 0,
+  "results": [
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/91db20388258.jpg",
+      "caption": "",
+      "source": "Real Men Real Style",
+      "original_width": "1536px",
+      "original_height": "1024px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/21d3bdb79c8e.png",
+      "caption": "",
+      "source": "A Hand Tailored Suit",
+      "original_width": "1024px",
+      "original_height": "1024px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/e733c22f6877.jpg",
+      "caption": "",
+      "source": "LinkedIn",
+      "original_width": "800px",
+      "original_height": "1122px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/85d5e279a4b2.png",
+      "caption": "",
+      "source": "School for Butlers & Hospitality",
+      "original_width": "1920px",
+      "original_height": "1080px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/ac135d70f585.png",
+      "caption": "",
+      "source": "暨大國企NCNUIBS - 國立暨南國際大學",
+      "original_width": "2047px",
+      "original_height": "1365px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/9757f8177ba7.jpg",
+      "caption": "",
+      "source": "LinkedIn",
+      "original_width": "800px",
+      "original_height": "1066px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/c1a30c347fe3.jpg",
+      "caption": "",
+      "source": "Owl Labs Blog",
+      "original_width": "1152px",
+      "original_height": "768px"
+    },
+    {
+      "original_url": "https://z-cdn.chatglm.cn/image-search-mcp/images-ppt/32b12f82a1c3.png",
+      "caption": "",
+      "source": "A Hand Tailored Suit",
+      "original_width": "1024px",
+      "original_height": "1024px"
+    }
+  ]
+}

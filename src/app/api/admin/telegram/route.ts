@@ -20,6 +20,37 @@ function isLocalOrigin(origin: string): boolean {
   return /^http:\/\//.test(origin) || /\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?\//.test(origin);
 }
 
+/**
+ * If `url` replies with an HTTP redirect (3xx), return the final URL it
+ * forwards to — Telegram refuses to follow redirects, so a webhook that
+ * redirects (e.g. non-www domain → www on Vercel) never receives button
+ * presses. Returns null when the URL answers directly.
+ */
+async function redirectTarget(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (loc) {
+        try {
+          return new URL(loc, url).toString().replace(/\/+$/, '');
+        } catch {
+          return loc;
+        }
+      }
+    }
+  } catch {
+    /* unreachable or timed out — treat as "answers directly" */
+  }
+  return null;
+}
+
 async function buildStatus(
   req: NextRequest,
   tokenConfigured: boolean
@@ -53,6 +84,7 @@ async function buildStatus(
       last_error_message: hook.result.last_error_message,
       ip_address: hook.result.ip_address,
     };
+    base.webhookRedirect = await redirectTarget(hook.result.url);
   } else if (!hook.ok) {
     base.error = `${base.error ? base.error + ' ' : ''}Webhook check failed: ${hook.error}`;
   }
@@ -106,8 +138,9 @@ export async function POST(req: NextRequest) {
         );
       }
       const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || '';
+      const webhookUrl = `${origin}/api/telegram-webhook`;
       const res = await telegramRequest<unknown>('setWebhook', {
-        url: `${origin}/api/telegram-webhook`,
+        url: webhookUrl,
         allowed_updates: ['callback_query'],
         ...(secret ? { secret_token: secret } : {}),
       });
@@ -118,8 +151,23 @@ export async function POST(req: NextRequest) {
           { status: 502 }
         );
       }
+      // Telegram accepted the registration, but the address may still be a
+      // redirect (custom domain non-www → www) — the buttons would not work.
+      const redirect = await redirectTarget(webhookUrl);
       const status = await buildStatus(req, true);
-      return NextResponse.json({ success: true, status });
+      return NextResponse.json({
+        success: true,
+        ...(redirect
+          ? {
+              warning:
+                `Registered ${webhookUrl}, but that address replies with a redirect to ${redirect} — ` +
+                'Telegram never follows redirects, so the approve buttons would still fail. ' +
+                `Open the console on the final address (${redirect}), connect again from there, ` +
+                'or set NEXT_PUBLIC_SITE_URL to that final address on Vercel.',
+            }
+          : {}),
+        status,
+      });
     }
 
     if (action === 'delete') {
