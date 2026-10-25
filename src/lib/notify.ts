@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import type { Registration } from './types';
 import { getSupabase } from './supabase';
+import { generateTicketPdf, ticketPdfFilename } from './ticket-pdf';
 import { EVENT } from '@/config/event';
 
 /* ───────────────────────── Telegram helpers ───────────────────── */
@@ -121,8 +122,14 @@ export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
-export function buildTicketEmail(rec: Registration, qrSrc: string): string {
+export function buildTicketEmail(rec: Registration, qrSrc: string, hasTicketPdf = false): string {
   const e = escapeHtml;
+  const ticketPdfNote = hasTicketPdf
+    ? `<div style="background:#f6eee6; padding:14px 20px; border-radius:8px; margin:20px 0; font-size:13px; line-height:1.8; color:#692136; border:1px solid #e5d5c5;">
+        <strong style="letter-spacing:.08em;">YOUR PERSONALISED TICKET IS ATTACHED 📎</strong><br/>
+        <span style="color:#1c2d5a;">Open the attached PDF — it carries your name and ticket number on the official workshop design (${e(rec.category)}, Rs. ${rec.amount}). Print it or keep it on your phone; show it together with the QR code at the entrance.</span>
+      </div>`
+    : '';
   return `<div style="font-family: Georgia, 'Times New Roman', serif; background:#faf7f0; padding:24px;">
   <div style="max-width:560px; margin:0 auto; background:#ffffff; border:1px solid #d8e0f0; border-radius:12px; padding:32px;">
     <p style="letter-spacing:.28em; font-size:11px; color:#265aa2; text-transform:uppercase; text-align:center; margin:0 0 10px; font-family:Verdana, sans-serif;">Etiquette Essentials</p>
@@ -142,6 +149,7 @@ export function buildTicketEmail(rec: Registration, qrSrc: string): string {
       <img src="${qrSrc}" alt="Entry QR code" style="width:180px; height:180px; border-radius:8px; border:1px solid #d8e0f0;"/>
       <p style="font-size:12px; color:#5e6b60; margin-top:10px; font-family:Verdana, sans-serif;">Scan this QR code at the entrance for entry validation.</p>
     </div>
+    ${ticketPdfNote}
     <hr style="border:none; border-top:1px solid #d8e0f0; margin:22px 0;"/>
     <p style="font-size:12px; color:#8a927f; text-align:center; margin:0; font-family:Verdana, sans-serif;">${EVENT.organizer}</p>
   </div>
@@ -173,12 +181,25 @@ export async function sendTicketEmail(
     }
     const resend = new Resend(process.env.RESEND_API_KEY);
     const from = process.env.EMAIL_FROM || 'Etiquette Essentials <onboarding@resend.dev>';
-    await resend.emails.send({
+
+    // Personalised designed ticket (student Rs. 700 / external Rs. 1,000) —
+    // attached when the design assets are available; the email itself never
+    // depends on it.
+    const ticketPdf = await generateTicketPdf(rec);
+    const attachments = ticketPdf
+      ? [{ filename: ticketPdfFilename(rec), content: Buffer.from(ticketPdf).toString('base64') }]
+      : undefined;
+
+    const { error: sendError } = await resend.emails.send({
       from,
       to: rec.email,
       subject: 'Confirmed Ticket — Etiquette Essentials Workshop',
-      html: buildTicketEmail(rec, qrSrc),
+      html: buildTicketEmail(rec, qrSrc, Boolean(ticketPdf)),
+      ...(attachments ? { attachments } : {}),
     });
+    if (sendError) {
+      return { ok: false, error: `Resend rejected the email: ${sendError.message}` };
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

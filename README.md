@@ -17,7 +17,10 @@ P1 Hall, Lyceum Campus, Nugegoda), with a complete registration system:
 - **Telegram admin approval** — every registration alerts your admin group with
   ✅ Approve / ❌ Reject buttons (per the registration-system guide); the webhook that
   makes the buttons work is connected with **one click from the organizer console**
-- **QR e-tickets via email** — approval generates a QR ticket and emails it (Resend)
+- **QR e-tickets via email** — approval generates a QR ticket and emails it (Resend),
+  **with the official Canva-designed ticket attached as a PDF** — the participant's
+  name is written on the design in script and their ticket number stamped in the box
+  (student Rs. 700 design for Lyceum students, external Rs. 1,000 design otherwise)
 - **Organizer console** (`/` → footer → *Organizer console*) — **password-protected**
   web fallback dashboard: live stats, approve/reject, slip viewer, ticket viewer
 - **Entrance scanner** — camera QR scanning plus manual code entry
@@ -190,7 +193,7 @@ password is correct. Wait a few minutes and reload the page to try again.
 - [ ] Confirm the alert appears in your Telegram admin group
 - [ ] In the organizer console, confirm the **Telegram approve buttons** card is green (Connected)
 - [ ] Tap **✅ Approve** — the Telegram message updates to "APPROVED BY …"
-- [ ] Check the participant's inbox for the QR ticket email
+- [ ] Check the participant's inbox for the QR ticket email — it must contain the QR code **and the attached personalised ticket PDF** (name written on the design, correct Rs. 700 / Rs. 1,000 variant for the category)
 - [ ] Open the site on a phone → footer → *Organizer console* → enter the password → *Entrance scanner*
 - [ ] Scan the QR from the email — green pass; scan again — amber "already scanned"
 - [ ] Open the invitation on a phone (≈375 px) — header, cards and form must fit without horizontal scrolling
@@ -208,6 +211,7 @@ password is correct. Wait a few minutes and reload the page to try again.
 | PDF slip won't upload | PDFs are capped at **3 MB** (images up to 20 MB — they get compressed). Re-export or screenshot the slip if it's bigger |
 | Console says "Incorrect password" | Enter the value of `ADMIN_KEY`; if the variable is unset the password is `etiquette2027` |
 | Console locked after wrong passwords | By design — 3 wrong attempts lock the console for 5 minutes (form disabled + `429`); wait and reload the page |
+| Ticket email arrives without the designed PDF attachment | The designed bases/fonts live in `public/tickets/` — make sure they are deployed (they ship in the repo zip; `outputFileTracingIncludes` covers the serverless functions). The email itself still works — the attachment is skipped gracefully if the assets are missing. Also check the Vercel function logs for `[ticket-pdf] generation failed` |
 | Duplicate approvals | Safe by design — approving an already-approved ticket just re-shows it; no second email |
 
 ## 7. Implementation notes
@@ -225,5 +229,13 @@ password is correct. Wait a few minutes and reload the page to try again.
   embedded PDF viewer (with an *Open in a new tab* link).
 - **Codes**: reference `EE-XXXXXX`, ticket `TKT-XXXXXXX` (unique-constrained in Postgres,
   with retry logic in the store layer).
+- **Designed ticket PDFs**: the two Canva ticket designs (student Rs. 700 / external
+  Rs. 1,000) were extracted from the organisers' export and rebuilt as single-page
+  base PDFs in `public/tickets/` (300-DPI, ~0.5 MB each). At approval,
+  `src/lib/ticket-pdf.ts` stamps the participant's name (Allura script, deep maroon,
+  auto-shrunk to fit the dotted line) and ticket code (PT Serif Bold, matching the
+  label grey) onto the design matching their category, and attaches the result to the
+  ticket email via `pdf-lib` + `@pdf-lib/fontkit`. If the assets are missing the
+  attachment is simply skipped — the QR email never fails because of it.
 - The unused Prisma scaffold files (`prisma/`, `db/custom.db`) are left in place and can
   be deleted; nothing imports them.
