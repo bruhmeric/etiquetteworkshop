@@ -13,13 +13,13 @@ const STEPS: { icon: LucideIcon; n: string; title: string; text: string }[] = [
     icon: Banknote,
     n: '01',
     title: 'Pay the fee',
-    text: 'Transfer the amount to the committee’s bank account — details are shown inside the registration form.',
+    text: 'Transfer the amount to the committee’s bank account using your unique payment reference — details are shown inside the registration form.',
   },
   {
     icon: CloudUpload,
     n: '02',
     title: 'Upload your slip',
-    text: 'Fill in the form and attach a photo or PDF of your payment slip.',
+    text: 'Fill in the form and attach a photo or PDF of your payment slip showing your reference.',
   },
   {
     icon: ShieldCheck,
@@ -48,7 +48,7 @@ export function Tickets({ onReserve }: { onReserve: (category?: string) => void 
         <SectionHeading
           kicker="Reserve Your Place"
           title="Tickets & Registration"
-          description="Two simple categories. Pay, upload your slip, and your QR ticket arrives by email once verified."
+          description="Two simple categories. Pay with your unique reference, upload your slip, and your QR ticket arrives by email once verified."
         />
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-2">

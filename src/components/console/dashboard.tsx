@@ -3,18 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
+  AlertTriangle,
   BadgeCheck,
   BadgeX,
   Ban,
   Clock3,
+  Copy,
   FileText,
   Hourglass,
   ImagePlus,
+  Link2,
   Loader2,
   Mail,
   Phone,
   QrCode,
   ScanFace,
+  Send,
+  Unlink,
   Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +31,7 @@ import type {
   ActionResponse,
   AdminListResponse,
   Registration,
+  TelegramStatusResponse,
 } from '@/lib/types';
 
 export interface ConsoleMeta {
@@ -53,6 +59,8 @@ export function Dashboard({
     note?: string;
   } | null>(null);
   const [slip, setSlip] = useState<{ name: string; url: string } | null>(null);
+  const [tg, setTg] = useState<TelegramStatusResponse | null>(null);
+  const [tgBusy, setTgBusy] = useState(false);
 
   const fetchList = useCallback(async () => {
     try {
@@ -86,6 +94,53 @@ export function Dashboard({
     const id = setInterval(fetchList, 5000);
     return () => clearInterval(id);
   }, [fetchList]);
+
+  const fetchTg = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/telegram', {
+        headers: { 'x-admin-key': adminKey },
+      });
+      if (!res.ok) return;
+      setTg((await res.json()) as TelegramStatusResponse);
+    } catch {
+      /* status card simply stays hidden on network errors */
+    }
+  }, [adminKey]);
+
+  useEffect(() => {
+    fetchTg();
+  }, [fetchTg]);
+
+  async function tgAction(action: 'set' | 'delete') {
+    setTgBusy(true);
+    try {
+      const res = await fetch('/api/admin/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ action }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        error?: string;
+        status?: TelegramStatusResponse;
+      };
+      if (json.status) setTg(json.status);
+      if (!res.ok || !json.success) {
+        toast.error(json.error || 'Telegram action failed.');
+        return;
+      }
+      toast.success(
+        action === 'set'
+          ? 'Connected — the Telegram approve buttons are now live.'
+          : 'Webhook removed — button presses will no longer reach this site.'
+      );
+      fetchTg();
+    } catch {
+      toast.error('Network error — could not reach Telegram.');
+    } finally {
+      setTgBusy(false);
+    }
+  }
 
   useEffect(
     () => () => {
@@ -189,6 +244,9 @@ export function Dashboard({
 
   return (
     <div className="space-y-8">
+      {/* Telegram webhook status */}
+      <TelegramCard tg={tg} busy={tgBusy} onAction={tgAction} />
+
       {/* stats */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Pending" value={c.pending} sub="awaiting review" icon={<Hourglass className="h-5 w-5" />} tone="brand" />
@@ -436,5 +494,168 @@ function Stat({
       </p>
       <p className="mt-1.5 text-xs text-muted-foreground">{sub}</p>
     </div>
+  );
+}
+
+/**
+ * Telegram approve-button health card. Registration alerts are pushed TO
+ * Telegram with a simple API call, but the Approve / Reject buttons only work
+ * once a webhook links Telegram back to this site — this card shows that
+ * status and connects it with one click.
+ */
+function TelegramCard({
+  tg,
+  busy,
+  onAction,
+}: {
+  tg: TelegramStatusResponse | null;
+  busy: boolean;
+  onAction: (action: 'set' | 'delete') => void;
+}) {
+  if (!tg || !tg.tokenConfigured) return null; // header badge says "No Telegram"
+
+  const connected = Boolean(tg.webhook && tg.webhook.url === tg.expectedUrl);
+  const pointingElsewhere = Boolean(tg.webhook && tg.webhook.url !== tg.expectedUrl);
+  const manualCmd = `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=${tg.expectedUrl}`;
+
+  return (
+    <section
+      aria-label="Telegram approve buttons"
+      className={`overflow-hidden rounded-xl border bg-card ${
+        connected ? 'border-success/40' : 'border-warning/50'
+      }`}
+    >
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Send className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+            <h3 className="text-sm font-semibold text-foreground">
+              Telegram approve buttons
+            </h3>
+            {connected ? (
+              <Badge variant="outline" className="rounded-full border-success/50 bg-success/10 text-[10px] font-medium uppercase tracking-[0.14em] text-success">
+                <Link2 className="mr-1 h-3 w-3" aria-hidden="true" />
+                Connected
+              </Badge>
+            ) : pointingElsewhere ? (
+              <Badge variant="outline" className="rounded-full border-warning/50 bg-warning/10 text-[10px] font-medium uppercase tracking-[0.14em] text-warning">
+                <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+                Points to another site
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="rounded-full border-warning/50 bg-warning/10 text-[10px] font-medium uppercase tracking-[0.14em] text-warning">
+                <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+                Not connected
+              </Badge>
+            )}
+            {tg.botUsername ? (
+              <span className="text-xs text-muted-foreground">@{tg.botUsername}</span>
+            ) : null}
+          </div>
+
+          {connected ? (
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              Button presses in the Telegram group are delivered to this site and approvals
+              send the QR ticket automatically.
+              {tg.webhook?.pending_update_count
+                ? ` ${tg.webhook.pending_update_count} update(s) still queued.`
+                : ''}
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              Registration alerts arrive in Telegram, but the Approve / Reject buttons do
+              nothing yet — Telegram has no way to deliver the button press back to this
+              site. Connect once (below) and the buttons go live. Until then, approve from
+              this dashboard.
+            </p>
+          )}
+
+          {pointingElsewhere && tg.webhook ? (
+            <p className="mt-1.5 break-all text-[11px] text-muted-foreground">
+              Currently pointing at <span className="font-mono">{tg.webhook.url}</span>
+            </p>
+          ) : null}
+
+          {tg.webhook?.last_error_message ? (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-destructive">
+              Last delivery error: {tg.webhook.last_error_message}
+            </p>
+          ) : null}
+          {tg.error ? (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-destructive">{tg.error}</p>
+          ) : null}
+          {tg.isLocal ? (
+            <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-warning">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              This is the local preview — Telegram can only reach the public Vercel URL. Open
+              the console on your deployed site and connect there.
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex shrink-0 gap-2">
+          <Button
+            size="sm"
+            onClick={() => onAction('set')}
+            disabled={busy || tg.isLocal}
+            className="h-9 rounded-full px-4 text-xs"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <>
+                <Link2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                {connected ? 'Re-connect' : 'Connect buttons'}
+              </>
+            )}
+          </Button>
+          {connected ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onAction('delete')}
+              disabled={busy}
+              className="h-9 rounded-full px-3 text-xs text-muted-foreground hover:text-destructive"
+            >
+              <Unlink className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              Remove
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {!connected ? (
+        <details className="border-t border-border/70 bg-secondary/30 px-5 py-3">
+          <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground">
+            Prefer to do it manually?
+          </summary>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Open this URL in any browser (replace{' '}
+            <span className="font-mono">&lt;YOUR_BOT_TOKEN&gt;</span> with the token BotFather
+            gave you) — it registers the webhook:
+          </p>
+          <div className="mt-2 flex items-start gap-2">
+            <code className="min-w-0 flex-1 break-all rounded-md border border-border bg-card px-3 py-2 font-mono text-[11px] text-foreground">
+              {manualCmd}
+            </code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-brand"
+              aria-label="Copy manual webhook command"
+              onClick={() => {
+                navigator.clipboard
+                  ?.writeText(manualCmd)
+                  .then(() => toast('Command copied'))
+                  .catch(() => {});
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </details>
+      ) : null}
+    </section>
   );
 }

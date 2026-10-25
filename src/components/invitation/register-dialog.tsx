@@ -26,10 +26,14 @@ import {
   Trash2,
 } from 'lucide-react';
 import { prepareSlipUpload, type PreparedSlip } from '@/lib/image-client';
+import { makeRefCode } from '@/lib/codes';
 import { STUDENT_ID_EXAMPLE } from '@/lib/validation';
 import { EVENT, TICKET_CATEGORIES, type Category } from '@/config/event';
 
 const STUDENT_ID_RE = /^[A-Za-z]{2,4}-[A-Za-z]{2,4}-\d{2}-\d{2}-\d{4}$/;
+/** sessionStorage key for the in-progress payment reference — survives dialog
+ *  close/reopen and page reloads, cleared once a registration succeeds. */
+const PAYMENT_REF_KEY = 'ee-payment-ref';
 
 type Fields = { fullName: string; email: string; phone: string; studentId: string };
 type FieldErrors = Partial<Record<keyof Fields | 'slip' | 'form', string>>;
@@ -52,6 +56,8 @@ export function RegisterDialog({
   const [slipBusy, setSlipBusy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  /** Unique reference shown BEFORE paying so it can go on the bank transfer. */
+  const [paymentRef, setPaymentRef] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const fileKeyRef = useRef(0);
 
@@ -78,6 +84,21 @@ export function RegisterDialog({
   useEffect(() => {
     if (open && initialCategory) setCategory(initialCategory);
   }, [open, initialCategory]);
+
+  // Assign a payment reference when the form opens. It persists in
+  // sessionStorage until a registration succeeds, so closing the dialog
+  // (or reloading) after paying does not change the number on the slip.
+  useEffect(() => {
+    if (!open || success || paymentRef) return;
+    const saved = window.sessionStorage.getItem(PAYMENT_REF_KEY);
+    if (saved && /^EE-\d{6}$/.test(saved)) {
+      setPaymentRef(saved);
+    } else {
+      const ref = makeRefCode();
+      window.sessionStorage.setItem(PAYMENT_REF_KEY, ref);
+      setPaymentRef(ref);
+    }
+  }, [open, success, paymentRef]);
 
   function set(field: keyof Fields, value: string) {
     setFields((f) => ({ ...f, [field]: value }));
@@ -133,6 +154,7 @@ export function RegisterDialog({
           studentId: activeCat.requiresStudentId ? fields.studentId.trim() : null,
           slipBase64: slip!.dataUrl,
           slipFileName: slip!.fileName,
+          paymentRef,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -145,6 +167,9 @@ export function RegisterDialog({
         return;
       }
       setSuccess(data.refCode);
+      // A fresh registration in this browser gets a fresh payment reference.
+      window.sessionStorage.removeItem(PAYMENT_REF_KEY);
+      setPaymentRef(null);
       toast.success('Registration received!');
     } catch {
       setErrors((prev) => ({ ...prev, form: 'Network error — please check your connection.' }));
@@ -276,9 +301,6 @@ export function RegisterDialog({
                         </Button>
                       </span>
                     </div>
-                    <p className="pt-1.5 text-xs text-muted-foreground">
-                      Use your full name as the payment reference.
-                    </p>
                   </div>
                 ) : (
                   <div className="mt-3 flex gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm leading-relaxed text-foreground">
@@ -292,6 +314,38 @@ export function RegisterDialog({
                     </p>
                   </div>
                 )}
+
+                {/* unique payment reference */}
+                <div className="mt-3 rounded-lg border border-brand/50 bg-brand/5 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-brand">
+                    Your payment reference
+                  </p>
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <p className="font-mono text-2xl font-bold tracking-[0.1em] text-foreground">
+                      {paymentRef ?? '…'}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-brand"
+                      aria-label="Copy payment reference"
+                      onClick={() => {
+                        if (!paymentRef) return;
+                        navigator.clipboard
+                          ?.writeText(paymentRef)
+                          .then(() => toast('Payment reference copied'))
+                          .catch(() => {});
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    Add this number as the payment reference on your bank transfer. It is unique
+                    to you — the committee uses it to match your slip to your registration.
+                  </p>
+                </div>
               </section>
 
               {/* 3 · details */}
@@ -379,6 +433,10 @@ export function RegisterDialog({
               <section aria-label="Payment slip upload">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   4 · Payment slip
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                  Your slip should show the amount and your reference{' '}
+                  <span className="font-mono font-medium text-foreground">{paymentRef}</span>.
                 </p>
                 {!slip ? (
                   <>
@@ -516,8 +574,8 @@ function SuccessPanel({ refCode, onDone }: { refCode: string; onDone: () => void
         You’re on the list!
       </h3>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-        We’ve received your registration and payment slip. Keep this reference code for any
-        inquiries:
+        We’ve received your registration and payment slip. This is the same reference you added
+        to your payment — keep it for any inquiries:
       </p>
       <div className="mx-auto mt-5 max-w-xs rounded-lg border border-brand/50 bg-brand/10 px-6 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-brand">

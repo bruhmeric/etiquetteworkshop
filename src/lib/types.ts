@@ -30,6 +30,9 @@ export interface ValidRegistration {
   studentId: string | null;
   slipBase64: string;
   slipFileName: string;
+  /** Client-generated payment reference (EE-XXXXXX) shown to the user
+   *  BEFORE they pay, so it can be written on the bank transfer. */
+  paymentRef: string | null;
 }
 
 /* ── API response contracts shared by client & server ─────────── */
@@ -71,4 +74,29 @@ export interface RegisterSuccessResponse {
   success: true;
   refCode: string;
   mode: StorageMode;
+}
+
+/* ── Telegram webhook status (GET /api/admin/telegram) ─────── */
+
+export interface TelegramWebhookInfo {
+  url: string;
+  has_custom_certificate: boolean;
+  pending_update_count: number;
+  last_error_date?: number;
+  last_error_message?: string;
+  ip_address?: string;
+}
+
+export interface TelegramStatusResponse {
+  tokenConfigured: boolean;
+  /** Username of the bot (from getMe) — null if the token is missing/invalid. */
+  botUsername: string | null;
+  /** Current webhook registration — null when no webhook is set. */
+  webhook: TelegramWebhookInfo | null;
+  /** The URL this deployment expects the webhook on. */
+  expectedUrl: string;
+  /** True when this deployment runs on localhost (Telegram can't reach it). */
+  isLocal: boolean;
+  secretConfigured: boolean;
+  error?: string;
 }

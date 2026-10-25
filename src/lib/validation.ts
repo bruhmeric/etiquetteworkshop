@@ -6,6 +6,9 @@ const PHONE_RE = /^[+]?[\d][\d\s\-()]{6,19}$/;
 const SLIP_RE = /^data:(image\/(png|jpe?g|webp)|application\/pdf);base64,([A-Za-z0-9+/=]+)$/;
 const MAX_DECODED = 4 * 1024 * 1024; // 4 MB (images compressed client-side, PDFs capped at 3 MB)
 
+/** Payment reference generated in the browser before paying (EE-XXXXXX). */
+const PAYMENT_REF_RE = /^EE-\d{6}$/;
+
 /**
  * Lyceum Campus student ID — e.g. BEd-PE-26-05-0015
  * (programme-specialisation-year-intake-serial).
@@ -83,9 +86,15 @@ export function validateRegistration(raw: unknown): ValidationResult {
     .replace(/[^a-zA-Z0-9._-]/g, '_')
     .slice(0, 80) || 'payment-slip.jpg';
 
+  // Optional client-generated payment reference (shown in the payment step so
+  // registrants can write it on their bank transfer). Invalid/absent → server
+  // generates a fresh one instead.
+  const rawRef = String(b.paymentRef ?? '').trim().toUpperCase();
+  const paymentRef = PAYMENT_REF_RE.test(rawRef) ? rawRef : null;
+
   return {
     ok: true,
-    value: { fullName, email, phone, category: cat.id, studentId, slipBase64, slipFileName },
+    value: { fullName, email, phone, category: cat.id, studentId, slipBase64, slipFileName, paymentRef },
   };
 }
 

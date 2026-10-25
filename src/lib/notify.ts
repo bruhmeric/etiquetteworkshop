@@ -22,7 +22,7 @@ export function buildNewRegistrationMessage(rec: Registration): string {
   const lines = [
     '🚨 <b>NEW REGISTRATION SUBMISSION</b>',
     '',
-    `<b>Ref Code:</b> <code>${escapeHtml(rec.reference_code)}</code>`,
+    `<b>Payment Ref:</b> <code>${escapeHtml(rec.reference_code)}</code>`,
     `<b>Name:</b> ${escapeHtml(rec.full_name)}`,
     `<b>Email:</b> ${escapeHtml(rec.email)}`,
     `<b>Phone:</b> ${escapeHtml(rec.phone)}`,
@@ -47,23 +47,37 @@ export function approveRejectKeyboard(id: string) {
 
 type TgResult = { ok: boolean; skipped?: boolean; error?: string };
 
-async function tgApi(method: string, body: Record<string, unknown>): Promise<TgResult> {
+/** Generic Telegram Bot API call returning the parsed `result` payload. */
+export async function telegramRequest<T>(
+  method: string,
+  body?: Record<string, unknown>
+): Promise<{ ok: boolean; result?: T; error?: string }> {
   const { token } = tgConfig();
-  if (!token) return { ok: false, skipped: true };
+  if (!token) return { ok: false, error: 'TELEGRAM_BOT_TOKEN is not set.' };
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body ?? {}),
     });
-    const json = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
+    const json = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      result?: T;
+      description?: string;
+    };
     if (!res.ok || json.ok === false) {
       return { ok: false, error: json.description || `HTTP ${res.status}` };
     }
-    return { ok: true };
+    return { ok: true, result: json.result };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
+}
+
+async function tgApi(method: string, body: Record<string, unknown>): Promise<TgResult> {
+  const r = await telegramRequest<unknown>(method, body);
+  if (!r.ok) return { ok: false, error: r.error };
+  return { ok: true };
 }
 
 export function sendTelegramMessage(
@@ -121,6 +135,7 @@ export function buildTicketEmail(rec: Registration, qrSrc: string): string {
       <span><strong>Time:</strong> ${EVENT.time.display}</span><br/>
       <span><strong>Venue:</strong> ${EVENT.venue.full}</span><br/>
       <span><strong>Category:</strong> ${e(rec.category)}</span><br/>
+      <span><strong>Payment ref:</strong> <span style="font-family:Consolas, monospace; color:#1c2d5a;">${e(rec.reference_code)}</span></span><br/>
       <span><strong>Ticket Code:</strong> <span style="font-family:Consolas, monospace; font-size:15px; color:#1c2d5a;">${e(rec.ticket_code)}</span></span>
     </div>
     <div style="text-align:center; margin:28px 0;">

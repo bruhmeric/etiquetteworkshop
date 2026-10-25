@@ -100,7 +100,10 @@ export async function createRegistration(
   if (!sb) {
     // ── demo mode ──
     for (let attempt = 0; attempt < 4; attempt++) {
-      const refCode = makeRefCode();
+      // First attempt honors the client-provided payment reference (the number
+      // the registrant wrote on their bank transfer); retries fall back to a
+      // freshly generated code if it collides with an existing one.
+      const refCode = attempt === 0 && input.paymentRef ? input.paymentRef : makeRefCode();
       const ticketCode = makeTicketCode();
       if (demoStore.hasCodeConflict(refCode, ticketCode)) continue;
       return demoStore.insert(
@@ -128,7 +131,7 @@ export async function createRegistration(
 
   // ── supabase mode ──
   for (let attempt = 0; attempt < 4; attempt++) {
-    const refCode = makeRefCode();
+    const refCode = attempt === 0 && input.paymentRef ? input.paymentRef : makeRefCode();
     const ticketCode = makeTicketCode();
 
     const path = `slips/${Date.now()}_${fileName}`;

@@ -10,10 +10,13 @@ P1 Hall, Lyceum Campus, Nugegoda), with a complete registration system:
   signal green `#4CAF50`) with the official Lyceum Campus logo in the header,
   invitation card and footer
 - **Registration form** — ticket category (Rs. 700 students / Rs. 1,000 external),
-  payment-slip upload (**JPG / PNG / WebP images — auto-compressed — or PDF up to
-  3 MB**), and **Lyceum student-ID validation** (format `BEd-PE-26-05-0015`)
+  **unique payment reference per participant** (shown before paying so it goes on the
+  bank transfer — makes matching slips to people trivial), payment-slip upload
+  (**JPG / PNG / WebP images — auto-compressed — or PDF up to 3 MB**), and
+  **Lyceum student-ID validation** (format `BEd-PE-26-05-0015`)
 - **Telegram admin approval** — every registration alerts your admin group with
-  ✅ Approve / ❌ Reject buttons (per the registration-system guide)
+  ✅ Approve / ❌ Reject buttons (per the registration-system guide); the webhook that
+  makes the buttons work is connected with **one click from the organizer console**
 - **QR e-tickets via email** — approval generates a QR ticket and emails it (Resend)
 - **Organizer console** (`/` → footer → *Organizer console*) — **password-protected**
   web fallback dashboard: live stats, approve/reject, slip viewer, ticket viewer
@@ -78,14 +81,28 @@ CREATE INDEX idx_ticket_code ON registrations(ticket_code);
 3. Get the **Group Chat ID** (usually starts with `-100…`) by adding [@myidbot](https://t.me/myidbot)
    to the group, or call `https://api.telegram.org/bot<TOKEN>/getUpdates`.
 
-Bind the webhook **after** the Vercel deploy (section 2.4):
+Bind the webhook **after** the Vercel deploy (section 2.4) — this is the step that makes
+the **Approve / Reject buttons work**. Without it, registration alerts still arrive in
+Telegram (those are pushed out by the site), but tapping the buttons does nothing because
+Telegram has no way to deliver the button press back to your site.
+
+**Easiest way — one click (recommended):** after deploying, open the **Organizer console**
+on your deployed site → *Dashboard* → the **“Telegram approve buttons”** card at the top
+shows the live status → click **Connect buttons**. Done — the card turns green. (The card
+also shows the current webhook URL, any delivery errors, and works from the deployed site
+only — Telegram can't reach `localhost`.)
+
+**Manual way — no console needed:** open this URL in any browser
+(replace `<TOKEN>` with the BotFather token and `<your-app>` with your Vercel domain):
 
 ```text
 https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<your-app>.vercel.app/api/telegram-webhook
 ```
 
 Optionally append `&secret_token=<same value as TELEGRAM_WEBHOOK_SECRET>` so the route
-only accepts requests from Telegram. Verify with `.../getWebhookInfo`.
+only accepts requests from Telegram. Verify with `https://api.telegram.org/bot<TOKEN>/getWebhookInfo`
+— the `url` field should show your `/api/telegram-webhook` address and `last_error_message`
+should stay empty.
 
 ### 2.3 Resend — ticket emails
 
@@ -102,7 +119,9 @@ only accepts requests from Telegram. Verify with `.../getWebhookInfo`.
 3. Set the **Build Command** to `next build` (Framework preset: Next.js).
 4. Add the environment variables (below) for Production.
 5. Deploy — you get `https://<your-app>.vercel.app`.
-6. Bind the Telegram webhook (section 2.2, step 4).
+6. Connect the Telegram approve buttons: open the **Organizer console** on the deployed
+   site → *Dashboard* → **Connect buttons** (or run the manual setWebhook URL from
+   section 2.2).
 
 ### Environment variables
 
@@ -148,8 +167,8 @@ files to update the logo everywhere. Colours are defined once in `src/app/global
 
 | Step | Where | What happens |
 | --- | --- | --- |
-| Participant registers | Invitation → *Reserve your seat* | Slip uploaded, record `pending`, Telegram alert with Approve/Reject buttons |
-| Committee approves | Telegram (or console) | Status → `approved`, QR ticket **emailed** automatically |
+| Participant registers | Invitation → *Reserve your seat* | The form shows a **unique payment reference** (e.g. `EE-482913`) in the payment step — the participant adds it to their bank transfer, so the slip is easy to match. On submit: slip uploaded, record `pending`, Telegram alert with Approve/Reject buttons |
+| Committee approves | Telegram (or console) | Status → `approved`, QR ticket **emailed** automatically — the Telegram alert shows the same payment reference that's printed on the slip |
 | Participant arrives | Console → *Entrance scanner* | Scan the QR (or type the code) — first scan checks in, repeats show "already scanned" |
 
 The organizer console (footer → *Organizer console*) is **password-protected**: enter
@@ -165,9 +184,11 @@ password is correct. Wait a few minutes and reload the page to try again.
 ## 5. Testing checklist
 
 - [ ] Submit a test registration with a sample payment receipt (student: use an ID like `BEd-PE-26-05-0015`) — try both an **image** slip and a **PDF** slip
+- [ ] Check the payment step shows a unique **payment reference** (e.g. `EE-482913`) with a copy button — closing and reopening the form keeps the same number
 - [ ] Try an invalid student ID (e.g. `BEd/2026/127`) — the form must reject it
 - [ ] Confirm the slip file lands in the Supabase `slips` bucket
 - [ ] Confirm the alert appears in your Telegram admin group
+- [ ] In the organizer console, confirm the **Telegram approve buttons** card is green (Connected)
 - [ ] Tap **✅ Approve** — the Telegram message updates to "APPROVED BY …"
 - [ ] Check the participant's inbox for the QR ticket email
 - [ ] Open the site on a phone → footer → *Organizer console* → enter the password → *Entrance scanner*
@@ -180,6 +201,7 @@ password is correct. Wait a few minutes and reload the page to try again.
 | --- | --- |
 | Vercel build fails on `cp: .next/standalone…` | Build Command must be `next build` (section 2.4) — the guarded script normally handles this automatically |
 | Telegram alert missing | Check `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`; group ids start with `-100`; the bot must be in the group |
+| Approve button in Telegram does nothing | The webhook isn't bound. Open the **Organizer console** → *Dashboard* → the "Telegram approve buttons" card → **Connect buttons**. (Alerts arrive without the webhook, but buttons need it — see section 2.2.) Check `getWebhookInfo` for `last_error_message` if it was connected but fails |
 | Ticket email not arriving | `RESEND_API_KEY` set? Domain verified in Resend? Check the recipient's spam; `onboarding@resend.dev` only reaches the account owner |
 | Slip images not loading in Telegram | The `slips` bucket must be **Public** |
 | PDF slip won't upload | PDFs are capped at **3 MB** (images up to 20 MB — they get compressed). Re-export or screenshot the slip if it's bigger |
