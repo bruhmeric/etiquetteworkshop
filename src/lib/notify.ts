@@ -31,7 +31,8 @@ export function buildNewRegistrationMessage(rec: Registration): string {
   ];
   if (rec.student_id) lines.push(`<b>Student ID:</b> ${escapeHtml(rec.student_id)}`);
   lines.push(`<b>Amount:</b> Rs. ${rec.amount}`);
-  lines.push(`<b>Receipt:</b> <a href="${rec.slip_url}">View payment slip</a>`);
+  // slip_url is server-generated, but escape anyway — defense in depth.
+  lines.push(`<b>Receipt:</b> <a href="${escapeHtml(rec.slip_url)}">View payment slip</a>`);
   return lines.join('\n');
 }
 

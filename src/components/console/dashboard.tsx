@@ -9,6 +9,7 @@ import {
   Ban,
   Clock3,
   Copy,
+  Download,
   FileText,
   Hourglass,
   ImagePlus,
@@ -19,6 +20,7 @@ import {
   QrCode,
   ScanFace,
   Send,
+  ShieldAlert,
   Unlink,
   Wallet,
 } from 'lucide-react';
@@ -38,6 +40,7 @@ export interface ConsoleMeta {
   mode: 'demo' | 'supabase';
   telegramConfigured: boolean;
   emailConfigured: boolean;
+  usingDefaultKey: boolean;
   counts: AdminListResponse['counts'];
 }
 
@@ -61,6 +64,7 @@ export function Dashboard({
   const [slip, setSlip] = useState<{ name: string; url: string } | null>(null);
   const [tg, setTg] = useState<TelegramStatusResponse | null>(null);
   const [tgBusy, setTgBusy] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
 
   const fetchList = useCallback(async () => {
     try {
@@ -82,6 +86,7 @@ export function Dashboard({
         mode: json.mode,
         telegramConfigured: json.telegramConfigured,
         emailConfigured: json.emailConfigured,
+        usingDefaultKey: json.usingDefaultKey,
         counts: json.counts,
       });
     } catch {
@@ -110,6 +115,39 @@ export function Dashboard({
   useEffect(() => {
     fetchTg();
   }, [fetchTg]);
+
+  /** Fetches the password-protected report endpoint and saves it as a file. */
+  async function downloadReport() {
+    setReportBusy(true);
+    try {
+      const res = await fetch('/api/admin/report', {
+        headers: { 'x-admin-key': adminKey },
+      });
+      if (!res.ok) {
+        const json = (await res.json().catch(() => null)) as { error?: string } | null;
+        toast.error(json?.error || 'Could not generate the report.');
+        return;
+      }
+      const blob = await res.blob();
+      const cd = res.headers.get('content-disposition') || '';
+      const name =
+        cd.match(/filename="([^"]+)"/)?.[1] ||
+        `etiquette-essentials-report-${new Date().toISOString().slice(0, 10)}.csv`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      toast.success('Report downloaded — full participant details as CSV.');
+    } catch {
+      toast.error('Network error — report not downloaded.');
+    } finally {
+      setReportBusy(false);
+    }
+  }
 
   async function tgAction(action: 'set' | 'delete') {
     setTgBusy(true);
@@ -252,19 +290,40 @@ export function Dashboard({
       {/* Telegram webhook status */}
       <TelegramCard tg={tg} busy={tgBusy} onAction={tgAction} />
 
-      {/* stats */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Pending" value={c.pending} sub="awaiting review" icon={<Hourglass className="h-5 w-5" />} tone="brand" />
-        <Stat
-          label="Approved"
-          value={c.approved}
-          sub={money(c.revenue)}
-          icon={<BadgeCheck className="h-5 w-5" />}
-          tone="success"
-        />
-        <Stat label="Checked in" value={c.checkedIn} sub={`of ${c.approved} approved`} icon={<ScanFace className="h-5 w-5" />} tone="success" />
-        <Stat label="Rejected" value={c.rejected} sub="declined slips" icon={<Ban className="h-5 w-5" />} tone="danger" />
-      </div>
+      {/* stats + report download */}
+      <section aria-label="Overview and reports">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+            Overview
+          </h3>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={downloadReport}
+            disabled={reportBusy}
+            className="h-9 rounded-full px-4 text-xs"
+          >
+            {reportBusy ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            Download report (CSV)
+          </Button>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Stat label="Pending" value={c.pending} sub="awaiting review" icon={<Hourglass className="h-5 w-5" />} tone="brand" />
+          <Stat
+            label="Approved"
+            value={c.approved}
+            sub={money(c.revenue)}
+            icon={<BadgeCheck className="h-5 w-5" />}
+            tone="success"
+          />
+          <Stat label="Checked in" value={c.checkedIn} sub={`of ${c.approved} approved`} icon={<ScanFace className="h-5 w-5" />} tone="success" />
+          <Stat label="Rejected" value={c.rejected} sub="declined slips" icon={<Ban className="h-5 w-5" />} tone="danger" />
+        </div>
+      </section>
 
       {/* pending */}
       <section aria-label="Awaiting approval">
@@ -594,6 +653,18 @@ function TelegramCard({
           {pointingElsewhere && tg.webhook ? (
             <p className="mt-1.5 break-all text-[11px] text-muted-foreground">
               Currently pointing at <span className="font-mono">{tg.webhook.url}</span>
+            </p>
+          ) : null}
+
+          {!tg.secretConfigured ? (
+            <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-warning">
+              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                <span className="font-medium">Webhook secret not set</span> — without{' '}
+                <span className="font-mono">TELEGRAM_WEBHOOK_SECRET</span> on Vercel, anyone who
+                discovers the webhook address could forge an approval. Set the secret, then press
+                Connect again (it is sent automatically).
+              </span>
             </p>
           ) : null}
 

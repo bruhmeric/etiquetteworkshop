@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Registration } from './types';
+import { makeSlipKey } from './codes';
 import { priceFor } from '@/config/event';
 
 /**
@@ -134,7 +135,7 @@ function seedStore(): StoreFile {
   ];
   const store: StoreFile = { registrations: [], slips: {} };
   for (const row of rows) {
-    const key = Array.from({ length: 12 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+    const key = makeSlipKey();
     store.slips[key] = {
       contentType: 'image/svg+xml',
       data: Buffer.from(
@@ -188,9 +189,7 @@ export const demoStore = {
 
   insert(rec: Registration, slip: { data: Uint8Array; contentType: string }): Registration {
     return withStore((s) => {
-      const key = Array.from({ length: 12 }, () =>
-        Math.floor(Math.random() * 16).toString(16)
-      ).join('');
+      const key = makeSlipKey();
       s.slips[key] = { contentType: slip.contentType, data: Buffer.from(slip.data).toString('base64') };
       // `.pdf` suffix lets the console UI pick the right viewer for PDF slips.
       const suffix = slip.contentType === 'application/pdf' ? '.pdf' : '';

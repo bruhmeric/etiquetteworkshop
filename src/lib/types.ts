@@ -49,6 +49,9 @@ export interface AdminListResponse {
   mode: StorageMode;
   telegramConfigured: boolean;
   emailConfigured: boolean;
+  /** True when ADMIN_KEY is not set — the console then warns that the
+   *  publicly-documented default password is in use. */
+  usingDefaultKey: boolean;
   registrations: Registration[];
   counts: AdminCounts;
 }

@@ -28,10 +28,12 @@ export async function GET(req: NextRequest) {
       mode: storageMode(),
       telegramConfigured: telegramConfigured(),
       emailConfigured: emailConfigured(),
+      usingDefaultKey: !process.env.ADMIN_KEY?.trim(),
       registrations,
       counts,
     };
-    return NextResponse.json(payload);
+    // Participant PII — never let browsers/proxies cache this response.
+    return NextResponse.json(payload, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('[admin/list]', err);
     return NextResponse.json(

@@ -1,4 +1,6 @@
 import type { NextRequest } from 'next/server';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { clientIp } from './rate-limit';
 
 /**
  * Organizer console password.
@@ -22,12 +24,6 @@ export function adminKey(): string {
 /* ── per-IP failure tracking (in-memory; best-effort on serverless) ── */
 const failures = new Map<string, { count: number; firstAt: number }>();
 
-function clientIp(req: NextRequest): string {
-  const fwd = req.headers.get('x-forwarded-for');
-  if (fwd) return fwd.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
-}
-
 function pruneExpired(now: number): void {
   for (const [ip, rec] of failures) {
     if (now - rec.firstAt > WINDOW_MS) failures.delete(ip);
@@ -37,6 +33,14 @@ function pruneExpired(now: number): void {
 export type AdminAuthResult =
   | { ok: true }
   | { ok: false; status: 401 | 429; error: string };
+
+/** Constant-time key comparison — digests first, so lengths always match. */
+function keyMatches(provided: string | null, expected: string): boolean {
+  if (!provided) return false;
+  const a = createHash('sha256').update(provided).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
 
 /**
  * Admin-password check for the organizer console APIs, with a 3-attempt
@@ -58,7 +62,7 @@ export function checkAdminAuth(req: NextRequest): AdminAuthResult {
     };
   }
 
-  if (req.headers.get('x-admin-key') === adminKey()) {
+  if (keyMatches(req.headers.get('x-admin-key'), adminKey())) {
     failures.delete(ip); // success clears the counter for this IP
     return { ok: true };
   }

@@ -23,9 +23,15 @@ P1 Hall, Lyceum Campus, Nugegoda), with a complete registration system:
   name is written on the design in script and their ticket number stamped in the box
   (student Rs. 700 design for Lyceum students, external Rs. 1,000 design otherwise)
 - **Organizer console** (`/` → footer → *Organizer console*) — **password-protected**
-  web fallback dashboard: live stats, approve/reject, slip viewer, ticket viewer
+  web fallback dashboard: live stats, approve/reject, slip viewer, ticket viewer,
+  and **one-click CSV report download** (how many invites / paid / came, per-category
+  breakdown, every participant detail and the attendee list — Excel-friendly)
 - **Entrance scanner** — camera QR scanning plus manual code entry
   (valid → green, already scanned → amber, unapproved/invalid → red)
+- **Security-hardened** — admin-key lockout (3 tries / 5 min, constant-time compare),
+  per-IP rate limits on the public register & check-in APIs, request-size caps,
+  strict input validation (incl. PDF magic-byte checks), crypto-random ticket codes,
+  Telegram webhook secret support and full HTTP security headers incl. CSP
 
 Built with **Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + shadcn/ui**.
 Zero-cost hosting on **Vercel + Supabase + Telegram + Resend**.
@@ -174,6 +180,7 @@ files to update the logo everywhere. Colours are defined once in `src/app/global
 | Participant registers | Invitation → *Reserve your seat* | The form shows a **unique payment reference** (e.g. `EE-482913`) in the payment step — the participant adds it to their bank transfer, so the slip is easy to match. On submit: slip uploaded, record `pending`, Telegram alert with Approve/Reject buttons |
 | Committee approves | Telegram (or console) | Status → `approved`, QR ticket **emailed** automatically — the Telegram alert shows the same payment reference that's printed on the slip |
 | Participant arrives | Console → *Entrance scanner* | Scan the QR (or type the code) — first scan checks in, repeats show "already scanned" |
+| Committee wants the numbers | Console → *Dashboard* → **Download report (CSV)** | A spreadsheet-ready file: total invites, approved/paid, pending, rejected, who checked in, attendance rate, revenue (total + per category), the full participant table (name, email, phone, category, student ID, amount, status, codes, timestamps, approver) and the attendee list |
 
 The organizer console (footer → *Organizer console*) is **password-protected**: enter
 `ADMIN_KEY` (default `etiquette2027` if the variable is unset). The key is kept in
@@ -198,6 +205,7 @@ password is correct. Wait a few minutes and reload the page to try again.
 - [ ] Open the site on a phone → footer → *Organizer console* → enter the password → *Entrance scanner*
 - [ ] Scan the QR from the email — green pass; scan again — amber "already scanned"
 - [ ] Open the invitation on a phone (≈375 px) — header, cards and form must fit without horizontal scrolling
+- [ ] In the console, click **Download report (CSV)** — the file opens in Excel/Sheets with the summary numbers matching the on-screen stat cards, and one row per participant
 
 ## 6. Troubleshooting
 
@@ -215,7 +223,37 @@ password is correct. Wait a few minutes and reload the page to try again.
 | Ticket email arrives without the designed PDF attachment | The designed bases/fonts live in `public/tickets/` — make sure they are deployed (they ship in the repo zip; `outputFileTracingIncludes` covers the serverless functions). The email itself still works — the attachment is skipped gracefully if the assets are missing. Also check the Vercel function logs for `[ticket-pdf] generation failed` |
 | Duplicate approvals | Safe by design — approving an already-approved ticket just re-shows it; no second email |
 
-## 7. Implementation notes
+## 7. Security
+
+What the code already enforces:
+
+- **Console APIs** (`/api/admin/*`) always require the `x-admin-key` header; wrong
+  passwords are compared in **constant time** and 3 failures lock the IP for 5 minutes.
+- **Public APIs are rate-limited per IP** — registrations: 10 per 10 minutes,
+  entrance scans: 30 per minute — and register bodies over ~6 MB are rejected
+  before parsing (slips are capped at 4 MB decoded anyway).
+- **Strict input validation** on every field, allow-listed file types with server-side
+  **PDF magic-byte verification**, and ticket/reference codes generated with
+  `crypto.getRandomValues` (not `Math.random`).
+- **Telegram webhook** rejects deliveries that don't carry `TELEGRAM_WEBHOOK_SECRET`
+  once the secret is set (the console connector sends it automatically). Without it,
+  the console shows an amber warning on the Telegram card.
+- **HTTP security headers** on every response: CSP, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS
+  (demo-mode PDF slips are exempted to `SAMEORIGIN` framing — the console embeds them).
+- Admin list & report responses are sent `Cache-Control: no-store` (participant PII).
+
+Organizer to-dos (cannot be done in code):
+
+1. **Set `ADMIN_KEY` on Vercel** — otherwise the console uses the documented default
+   password and the console itself shows a red warning banner.
+2. **Set `TELEGRAM_WEBHOOK_SECRET`** and press *Connect buttons* once more.
+3. Payment slips land in the public Supabase `slips` bucket — anyone with the exact
+   URL can view them. URLs are unguessable, but for maximum privacy you can flip the
+   bucket to private and serve **signed URLs** (`createSignedUrl`, 7-day expiry) —
+  the Telegram alert and the console viewer would need to read from the signed link.
+
+## 8. Implementation notes
 
 - **Why Supabase (not Prisma/SQLite)?** Vercel's serverless filesystem is read-only —
   SQLite cannot persist there. Supabase (free tier) gives you Postgres + file storage,

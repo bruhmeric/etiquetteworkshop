@@ -29,6 +29,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Silences metadataBase warnings and makes OG URLs absolute on the deployed
+  // domain when the canonical address is configured.
+  ...(process.env.NEXT_PUBLIC_SITE_URL
+    ? { metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL) }
+    : {}),
   title: "Etiquette Essentials — You're Cordially Invited",
   description: `${EVENT.tagline}. ${EVENT.date.long}, ${EVENT.time.display} at ${EVENT.venue.full}. ${EVENT.description}`,
   keywords: [

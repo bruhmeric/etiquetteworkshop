@@ -9,6 +9,7 @@ import {
   LogOut,
   ScanLine,
   Send,
+  ShieldAlert,
   MailX,
   MailCheck,
 } from 'lucide-react';
@@ -277,6 +278,20 @@ export function OrganizerConsole({ onExit }: { onExit: () => void }) {
               <code className="font-mono text-xs">TELEGRAM</code> and{' '}
               <code className="font-mono text-xs">RESEND</code> environment variables on Vercel to
               go live (see the README).
+            </span>
+          </p>
+        </div>
+      ) : null}
+
+      {meta?.usingDefaultKey && meta?.mode === 'supabase' ? (
+        <div className="border-b border-destructive/30 bg-destructive/10">
+          <p className="mx-auto flex w-full max-w-6xl items-start gap-2.5 px-4 py-2.5 text-[13px] leading-relaxed text-foreground sm:px-6">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+            <span>
+              <span className="font-medium">Default password in use</span> — the console is
+              protected by the publicly documented default because{' '}
+              <code className="font-mono text-xs">ADMIN_KEY</code> is not set. Set your own
+              password in Vercel → Settings → Environment Variables, then redeploy.
             </span>
           </p>
         </div>
