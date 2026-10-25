@@ -141,7 +141,7 @@ export function OrganizerConsole({ onExit }: { onExit: () => void }) {
 
         <main className="flex flex-1 items-center justify-center px-4 py-10">
           <div className="w-full max-w-sm">
-            <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-[0_30px_70px_-30px_rgba(28,45,90,0.35)]">
+            <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-[0_30px_70px_-30px_rgba(64,36,46,0.35)]">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-brand/40 bg-brand/10 text-brand">
                 <LockKeyhole className="h-6 w-6" aria-hidden="true" />
               </span>

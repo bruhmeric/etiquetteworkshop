@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Feather, MessagesSquare, Shirt, Handshake } from 'lucide-react';
 import { SectionHeading } from './section-heading';
+import { FlowerDecor } from './flower-decor';
 import { EVENT } from '@/config/event';
 import type { LucideIcon } from 'lucide-react';
 
@@ -16,8 +17,12 @@ const AREAS: { icon: LucideIcon; label: string }[] = [
 
 export function About() {
   return (
-    <section id="workshop" className="relative py-20 sm:py-24 lg:py-28">
-      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+    <section id="workshop" className="relative overflow-hidden py-20 sm:py-24 lg:py-28">
+      <FlowerDecor
+        variant="sprig"
+        className="absolute -right-8 top-10 hidden h-40 -rotate-6 opacity-50 sm:block lg:h-48 [mask-image:linear-gradient(to_top,transparent,black_30%)]"
+      />
+      <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6">
         <SectionHeading
           align="center"
           kicker="The Workshop"

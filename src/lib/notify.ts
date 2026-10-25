@@ -127,23 +127,23 @@ export function buildTicketEmail(rec: Registration, qrSrc: string, hasTicketPdf 
   const ticketPdfNote = hasTicketPdf
     ? `<div style="background:#f6eee6; padding:14px 20px; border-radius:8px; margin:20px 0; font-size:13px; line-height:1.8; color:#692136; border:1px solid #e5d5c5;">
         <strong style="letter-spacing:.08em;">YOUR PERSONALISED TICKET IS ATTACHED 📎</strong><br/>
-        <span style="color:#1c2d5a;">Open the attached PDF — it carries your name and ticket number on the official workshop design (${e(rec.category)}, Rs. ${rec.amount}). Print it or keep it on your phone; show it together with the QR code at the entrance.</span>
+        <span style="color:#3b2029;">Open the attached PDF — it carries your name and ticket number on the official workshop design (${e(rec.category)}, Rs. ${rec.amount}). Print it or keep it on your phone; show it together with the QR code at the entrance.</span>
       </div>`
     : '';
   return `<div style="font-family: Georgia, 'Times New Roman', serif; background:#faf7f0; padding:24px;">
   <div style="max-width:560px; margin:0 auto; background:#ffffff; border:1px solid #d8e0f0; border-radius:12px; padding:32px;">
-    <p style="letter-spacing:.28em; font-size:11px; color:#265aa2; text-transform:uppercase; text-align:center; margin:0 0 10px; font-family:Verdana, sans-serif;">Etiquette Essentials</p>
-    <h2 style="color:#1c2d5a; text-align:center; margin:0 0 20px; font-weight:600; font-size:22px;">YOU'RE IN — WORKSHOP PASS</h2>
-    <p style="color:#1c2d5a; line-height:1.7;">Dear <strong>${e(rec.full_name)}</strong>,</p>
-    <p style="color:#1c2d5a; line-height:1.7;">Your payment for <strong>Etiquette Essentials</strong> has been verified. Here is your entry ticket:</p>
-    <div style="background:#edf2fc; padding:16px 20px; border-radius:8px; margin:20px 0; font-size:14px; line-height:2; color:#1c2d5a;">
+    <p style="letter-spacing:.28em; font-size:11px; color:#a94e5c; text-transform:uppercase; text-align:center; margin:0 0 10px; font-family:Verdana, sans-serif;">Etiquette Essentials</p>
+    <h2 style="color:#3b2029; text-align:center; margin:0 0 20px; font-weight:600; font-size:22px;">YOU'RE IN — WORKSHOP PASS</h2>
+    <p style="color:#3b2029; line-height:1.7;">Dear <strong>${e(rec.full_name)}</strong>,</p>
+    <p style="color:#3b2029; line-height:1.7;">Your payment for <strong>Etiquette Essentials</strong> has been verified. Here is your entry ticket:</p>
+    <div style="background:#f9e7e0; padding:16px 20px; border-radius:8px; margin:20px 0; font-size:14px; line-height:2; color:#3b2029;">
       <span><strong>Event:</strong> Etiquette Essentials Workshop</span><br/>
       <span><strong>Date:</strong> ${EVENT.date.long}</span><br/>
       <span><strong>Time:</strong> ${EVENT.time.display}</span><br/>
       <span><strong>Venue:</strong> ${EVENT.venue.full}</span><br/>
       <span><strong>Category:</strong> ${e(rec.category)}</span><br/>
-      <span><strong>Payment ref:</strong> <span style="font-family:Consolas, monospace; color:#1c2d5a;">${e(rec.reference_code)}</span></span><br/>
-      <span><strong>Ticket Code:</strong> <span style="font-family:Consolas, monospace; font-size:15px; color:#1c2d5a;">${e(rec.ticket_code)}</span></span>
+      <span><strong>Payment ref:</strong> <span style="font-family:Consolas, monospace; color:#3b2029;">${e(rec.reference_code)}</span></span><br/>
+      <span><strong>Ticket Code:</strong> <span style="font-family:Consolas, monospace; font-size:15px; color:#3b2029;">${e(rec.ticket_code)}</span></span>
     </div>
     <div style="text-align:center; margin:28px 0;">
       <img src="${qrSrc}" alt="Entry QR code" style="width:180px; height:180px; border-radius:8px; border:1px solid #d8e0f0;"/>

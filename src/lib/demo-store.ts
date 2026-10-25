@@ -55,9 +55,9 @@ function slipSvg(name: string, amount: number, ref: string): string {
   <rect width="760" height="460" fill="#f7f4ec"/>
   <rect x="18" y="18" width="724" height="424" fill="#fffdf6" stroke="#c8b481" stroke-width="2"/>
   <rect x="34" y="34" width="692" height="392" fill="none" stroke="#c8b481" stroke-width="1"/>
-  <text x="380" y="86" text-anchor="middle" font-family="Georgia, serif" font-size="15" letter-spacing="4" fill="#265aa2">DEMO PAYMENT SLIP</text>
+  <text x="380" y="86" text-anchor="middle" font-family="Georgia, serif" font-size="15" letter-spacing="4" fill="#a94e5c">DEMO PAYMENT SLIP</text>
   <line x1="280" y1="102" x2="480" y2="102" stroke="#c8b481" stroke-width="1"/>
-  <text x="380" y="146" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#1c2d5a">${esc(name)}</text>
+  <text x="380" y="146" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#3b2029">${esc(name)}</text>
   <text x="380" y="182" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#5e6b60">paid Rs. ${amount}.00 — Etiquette Essentials Workshop</text>
   <text x="380" y="212" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#5e6b60">Ref ${esc(ref)} · Internet banking transfer</text>
   <rect x="250" y="248" width="260" height="64" fill="none" stroke="#c8b481" stroke-width="1.5"/>

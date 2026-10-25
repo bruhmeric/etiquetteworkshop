@@ -3,12 +3,17 @@
 import Link from 'next/link';
 import { ArrowUp, KeyRound, Mail, Phone } from 'lucide-react';
 import { LyceumLogo } from './lyceum-logo';
+import { FlowerDecor } from './flower-decor';
 import { EVENT } from '@/config/event';
 
 export function SiteFooter({ onOpenConsole }: { onOpenConsole: () => void }) {
   return (
-    <footer className="mt-auto bg-[#1c2d5a] text-white">
-      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+    <footer className="relative mt-auto overflow-hidden bg-[#3b2029] text-white">
+      <FlowerDecor
+        variant="sprig"
+        className="absolute -top-2 right-4 h-24 opacity-70 sm:right-10 sm:h-32 sm:opacity-90 [mask-image:linear-gradient(to_top,transparent,black_30%)]"
+      />
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
         <div className="flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
           <div className="flex flex-col items-center gap-4 text-center md:items-start md:text-left">
             <div className="flex items-center gap-3">

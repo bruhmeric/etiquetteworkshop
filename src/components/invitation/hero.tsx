@@ -5,6 +5,7 @@ import { ArrowRight, CalendarDays, Clock3, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EVENT } from '@/config/event';
 import { LyceumLogo } from './lyceum-logo';
+import { FlowerDecor } from './flower-decor';
 
 const container: Variants = {
   hidden: {},
@@ -42,6 +43,17 @@ export function Hero({ onReserve }: { onReserve: () => void }) {
         </div>
         <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
         <div className="absolute -bottom-32 right-1/4 h-80 w-80 rounded-full bg-brand/[0.07] blur-3xl" />
+        {/* ticket watercolour florals */}
+        <FlowerDecor
+          variant="peony"
+          priority
+          className="absolute -bottom-4 -left-6 h-32 opacity-60 sm:-left-10 sm:h-52 sm:opacity-90 lg:h-72 lg:opacity-100"
+        />
+        <FlowerDecor
+          variant="branch"
+          priority
+          className="absolute -right-12 top-14 h-48 opacity-60 sm:-right-14 sm:h-64 sm:opacity-90 lg:-right-20 lg:h-96 lg:opacity-100"
+        />
       </div>
 
       <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-6xl flex-col items-center justify-center px-4 py-16 sm:px-6">
@@ -52,7 +64,7 @@ export function Hero({ onReserve }: { onReserve: () => void }) {
           className="relative w-full max-w-3xl"
         >
           {/* the invitation card */}
-          <div className="relative rounded-lg border border-brand/45 bg-card/95 shadow-[0_1px_2px_rgba(28,45,90,0.05),0_30px_80px_-24px_rgba(28,45,90,0.18)] backdrop-blur-sm dark:shadow-[0_30px_80px_-24px_rgba(0,0,0,0.6)]">
+          <div className="relative rounded-lg border border-brand/45 bg-card/95 shadow-[0_1px_2px_rgba(64,36,46,0.05),0_30px_80px_-24px_rgba(64,36,46,0.18)] backdrop-blur-sm dark:shadow-[0_30px_80px_-24px_rgba(0,0,0,0.6)]">
             <div className="pointer-events-none absolute inset-[7px] rounded-[5px] border border-brand/40" aria-hidden="true">
               <span className="absolute -left-[1px] -top-[1px] h-4 w-4 border-l-2 border-t-2 border-brand" />
               <span className="absolute -right-[1px] -top-[1px] h-4 w-4 border-r-2 border-t-2 border-brand" />
@@ -133,7 +145,7 @@ export function Hero({ onReserve }: { onReserve: () => void }) {
               >
                 <Button
                   onClick={onReserve}
-                  className="group h-12 rounded-full bg-brand px-8 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_10px_30px_-10px_rgba(38,90,162,0.55)] transition-all hover:bg-brand-strong hover:shadow-[0_14px_36px_-10px_rgba(38,90,162,0.65)] sm:min-w-[220px]"
+                  className="group h-12 rounded-full bg-brand px-8 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_10px_30px_-10px_rgba(169,78,92,0.55)] transition-all hover:bg-brand-strong hover:shadow-[0_14px_36px_-10px_rgba(169,78,92,0.65)] sm:min-w-[220px]"
                 >
                   Reserve your seat
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { CalendarDays, Clock3, MapPin, ExternalLink } from 'lucide-react';
 import { SectionHeading } from './section-heading';
+import { FlowerDecor } from './flower-decor';
 import { EVENT } from '@/config/event';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,10 +37,18 @@ export function Details() {
   return (
     <section
       id="details"
-      className="relative border-y border-border/70 bg-secondary/45 py-20 sm:py-24"
+      className="relative overflow-hidden border-y border-border/70 bg-secondary/45 py-20 sm:py-24"
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="paper-grain absolute inset-0 opacity-[0.03] mix-blend-multiply dark:opacity-[0.04] dark:mix-blend-screen" />
+        <FlowerDecor
+          variant="branch-flip"
+          className="absolute -left-6 top-1/2 h-44 -translate-y-1/2 opacity-50 sm:-left-10 sm:h-60 sm:opacity-70 lg:h-80"
+        />
+        <FlowerDecor
+          variant="branch"
+          className="absolute -right-6 top-1/2 h-44 -translate-y-1/2 opacity-50 sm:-right-10 sm:h-60 sm:opacity-70 lg:h-80"
+        />
       </div>
       <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeading
@@ -56,7 +65,7 @@ export function Details() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.55, delay: 0.1 * i }}
-              className="rounded-xl border border-border bg-card p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-brand/60 hover:shadow-[0_18px_40px_-20px_rgba(28,45,90,0.22)]"
+              className="rounded-xl border border-border bg-card p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-brand/60 hover:shadow-[0_18px_40px_-20px_rgba(64,36,46,0.22)]"
             >
               <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-brand/40 bg-brand/10 text-brand">
                 <c.icon className="h-5 w-5" aria-hidden="true" />

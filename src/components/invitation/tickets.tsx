@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check, Banknote, CloudUpload, ShieldCheck, QrCode } from 'lucide-react';
 import { SectionHeading } from './section-heading';
+import { FlowerDecor } from './flower-decor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TICKET_CATEGORIES, EVENT } from '@/config/event';
@@ -43,8 +44,12 @@ const INCLUDES = [
 
 export function Tickets({ onReserve }: { onReserve: (category?: string) => void }) {
   return (
-    <section id="tickets" className="relative py-20 sm:py-24 lg:py-28">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+    <section id="tickets" className="relative overflow-hidden py-20 sm:py-24 lg:py-28">
+      <FlowerDecor
+        variant="peony-flip"
+        className="absolute -bottom-6 -right-8 h-36 opacity-60 sm:h-52 sm:opacity-80 lg:h-72 lg:opacity-90"
+      />
+      <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SectionHeading
           kicker="Reserve Your Place"
           title="Tickets & Registration"
@@ -59,7 +64,7 @@ export function Tickets({ onReserve }: { onReserve: (category?: string) => void 
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.6, delay: 0.12 * i }}
-              className="relative flex flex-col rounded-xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:border-brand/70 hover:shadow-[0_24px_50px_-24px_rgba(28,45,90,0.28)]"
+              className="relative flex flex-col rounded-xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:border-brand/70 hover:shadow-[0_24px_50px_-24px_rgba(64,36,46,0.28)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>

@@ -29,6 +29,7 @@ import { prepareSlipUpload, type PreparedSlip } from '@/lib/image-client';
 import { makeRefCode } from '@/lib/codes';
 import { STUDENT_ID_EXAMPLE } from '@/lib/validation';
 import { EVENT, TICKET_CATEGORIES, type Category } from '@/config/event';
+import { FlowerDecor } from './flower-decor';
 
 const STUDENT_ID_RE = /^[A-Za-z]{2,4}-[A-Za-z]{2,4}-\d{2}-\d{2}-\d{4}$/;
 /** sessionStorage key for the in-progress payment reference — survives dialog
@@ -568,7 +569,12 @@ function SuccessPanel({ refCode, onDone }: { refCode: string; onDone: () => void
     { icon: QrCode, text: 'Scan it at the entrance on the day' },
   ];
   return (
-    <div className="px-6 py-10 text-center sm:px-10">
+    <div className="relative overflow-hidden px-6 py-10 text-center sm:px-10">
+      <FlowerDecor
+        variant="peony-flip"
+        className="absolute -bottom-5 -right-6 h-28 opacity-70 sm:h-36"
+      />
+      <div className="relative">
       <CheckCircle2 className="mx-auto h-12 w-12 text-brand" aria-hidden="true" />
       <h3 className="mt-4 font-display text-3xl font-semibold text-foreground">
         You’re on the list!
@@ -604,6 +610,7 @@ function SuccessPanel({ refCode, onDone }: { refCode: string; onDone: () => void
         >
           Done
         </Button>
+      </div>
       </div>
     </div>
   );

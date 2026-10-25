@@ -3,7 +3,7 @@ import QRCode, { type QRCodeToDataURLOptions } from 'qrcode';
 const OPTS: QRCodeToDataURLOptions = {
   margin: 1,
   width: 480,
-  color: { dark: '#1c2d5aff', light: '#ffffffff' },
+  color: { dark: '#3b2029ff', light: '#ffffffff' },
 };
 
 /** Data-URL QR (for on-screen display in the console). */

@@ -6,8 +6,9 @@ P1 Hall, Lyceum Campus, Nugegoda), with a complete registration system:
 
 - **Invitation landing page** — hero, a concise *About the workshop* section, event
   details, ticket pricing (light/dark themes, fully responsive, mobile-first) in the
-  **Lyceum Campus brand palette** (Lyceum blue `#265AA2`, deep navy `#1C2D5A`,
-  signal green `#4CAF50`) with the official Lyceum Campus logo in the header,
+  **official ticket palette** (blush cream `#FDF0EA`, dusty rose `#A94E5C`, deep
+  plum `#3B2029`, maroon `#692136`) with **watercolour flower decorations extracted
+  from the official ticket** and the official Lyceum Campus logo in the header,
   invitation card and footer
 - **Registration form** — ticket category (Rs. 700 students / Rs. 1,000 external),
   **unique payment reference per participant** (shown before paying so it goes on the
